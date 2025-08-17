@@ -1,8 +1,51 @@
 <!DOCTYPE html>
+
 <head>
     <link rel="stylesheet" href="src/index.css">
 </head>
+
 <body>
-    TEMPLATE HELLO :)
+    <div id="app-wrapper">
+        <div id="injector-wrapper">
+            <input id="injector-serial" placeholder="Injector serial number">
+            <input id="duty-100-before" placeholder="Duty cycle 100% (before)">
+            <input id="duty-100-after" placeholder="Duty cycle 100% (after)">
+            <input id="duty-50-before" placeholder="Duty cycle 50% (before)">
+            <input id="duty-50-after" placeholder="Duty cycle 50% (after)">
+            <input id="idle-before" placeholder="Idle test value (before)">
+            <input id="idle-after" placeholder="Idle test value (after)">
+            <button id="add">+</button>
+        </div>
+        <div id="injector-table-wrapper">
+            <table id="injector-table">
+                <thead>
+                    <tr>
+                        <th>Injector Serial</th>
+                        <th>100% Before</th>
+                        <th>After</th>
+                        <th>50% Before</th>
+                        <th>After</th>
+                        <th>Idle Before</th>
+                        <th>After</th>
+                    </tr>
+                </thead>
+                <tbody id="injector-table-body">
+                </tbody>
+            </table>
+        </div>
+        <div id="order-wrapper">
+            <div id="order-input-wrapper">
+                <input id="make" placeholder="Vehicle make (e.g. Toyota)">
+                <input id="part" placeholder="Part #">
+                <input id="customer" placeholder="Customer name">
+                <input id="ohm" placeholder="Ohm">
+            </div>
+            <button id="submit">Submit Order</button>
+        </div>
+        <div id="button-wrapper">
+            <button id="export">Export Excel</button>
+        </div>
+
+    </div>
     <script type="module" src="src/index.js"></script>
 </body>
