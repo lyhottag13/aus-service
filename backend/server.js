@@ -197,12 +197,12 @@ async function generateChartBuffer(data) {
                 {
                     label: data.label,
                     data: data.data,
-                    backgroundColor: 'rgba(255, 40, 40, 1)'
+                    backgroundColor: 'rgb(255, 192, 0)'
                 },
                 {
                     label: data.label2,
                     data: data.data2,
-                    backgroundColor: 'rgba(40, 40, 255, 1)'
+                    backgroundColor: 'green'
                 }
             ]
         }
@@ -213,11 +213,11 @@ async function generateChartBuffer(data) {
 }
 
 async function addChartsToPdf(templatePath, outputPath, chartBuffers) {
-    // Load existing PDF
+    // Loads existing PDF
     const existingPdfBytes = fs.readFileSync(templatePath);
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
 
-    // Add charts as an image on the first page
+    // Adds charts as an image on the first page
     const pngImages = [];
     for (let i = 0; i < chartBuffers.length; i++) {
         pngImages.push(await pdfDoc.embedPng(chartBuffers[i]));
@@ -230,7 +230,7 @@ async function addChartsToPdf(templatePath, outputPath, chartBuffers) {
     const chartHeight = 125;
     const bottomMargin = 64;
 
-    // Place image at exact coordinates
+    // Places image at exact coordinates.
     firstPage.drawImage(pngImages[0], {
         x: 495,
         y: chartHeight * 2 + padding * 2 + bottomMargin,
@@ -250,7 +250,7 @@ async function addChartsToPdf(templatePath, outputPath, chartBuffers) {
         height: chartHeight,
     });
 
-    // Save the modified PDF
+    // Saves the modified PDF
     const pdfBytes = await pdfDoc.save();
     fs.writeFileSync(outputPath, pdfBytes);
 }
