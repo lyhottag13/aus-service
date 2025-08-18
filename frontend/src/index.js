@@ -29,8 +29,7 @@ async function handleSubmit() {
             customer: elements.inputs.customer.value,
             ohm: elements.inputs.ohm.value
         });
-        window.alert('Cool :)');
-        updateInjectorTable();
+        window.alert(`New Process ID: ${response.data.processId}`);
         resetAll();
     } catch (err) {
         console.log(err);
@@ -64,7 +63,7 @@ async function handleExport() {
         }
         window.open(`/api/export?processId=${processId}`);
     } catch (err) {
-        
+
     }
 }
 
@@ -111,8 +110,10 @@ function updateInjectorTable() {
  * Resets everything.
  */
 function resetAll() {
+    resetInjectors();
     resetInjectorInputs();
     resetOrderInputs();
+    updateInjectorTable();
 }
 
 /**
@@ -123,6 +124,10 @@ function resetOrderInputs() {
     elements.inputs.make.value = '';
     elements.inputs.part.value = '';
     elements.inputs.ohm.value = '';
+}
+
+function resetInjectors() {
+    injectors.splice(0, injectors.length);
 }
 
 main();

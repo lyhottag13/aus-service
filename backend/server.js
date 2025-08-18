@@ -5,6 +5,10 @@ import port from './src/port.js';
 import { pool, poolConnect } from './src/db.js';
 import sql from 'mssql';
 import ExcelJS from 'exceljs';
+import { exec } from 'child_process';
+import fs from 'fs';
+import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
+import { PDFDocument } from 'pdf-lib';
 
 const app = express();
 
@@ -26,7 +30,7 @@ app.post('/api/service', async (req, res) => {
         await poolConnect; // Tests the pool connection before continuing.
 
         const { make, part, customer, injectors, ohm } = req.body;
-        const result2 = await pool.request()
+        const processesRequest = await pool.request()
             .input('make', sql.VarChar(50), make)
             .input('part', sql.VarChar(50), part)
             .input('customer', sql.VarChar(50), customer)
@@ -38,7 +42,7 @@ app.post('/api/service', async (req, res) => {
                 VALUES
                 (@make, @part, @customer, @ohm, @datetime)`);
 
-        const request = pool.request();
+        const injectorsRequest = pool.request();
         let sqlString = `INSERT INTO injectors 
             (process_id, injector_serial, duty_100_before, duty_100_after, 
             duty_50_before, duty_50_after, idle_before, idle_after)
@@ -46,21 +50,21 @@ app.post('/api/service', async (req, res) => {
         const values = [];
 
         for (let i = 0; i < injectors.length; i++) {
-            request.input(`processId${i}`, sql.Int, parseInt(result2.recordset[0].process_id));
-            request.input(`injectorSerial${i}`, sql.VarChar(50), injectors[i].injectorSerial);
-            request.input(`duty100Before${i}`, sql.Int, parseInt(injectors[i].duty100Before));
-            request.input(`duty100After${i}`, sql.Int, parseInt(injectors[i].duty100After));
-            request.input(`duty50Before${i}`, sql.Int, parseInt(injectors[i].duty50Before));
-            request.input(`duty50After${i}`, sql.Int, parseInt(injectors[i].duty50After));
-            request.input(`idleBefore${i}`, sql.Decimal(10, 2), parseFloat(injectors[i].idleBefore));
-            request.input(`idleAfter${i}`, sql.Decimal(10, 2), parseFloat(injectors[i].idleAfter));
+            injectorsRequest.input(`processId${i}`, sql.Int, parseInt(processesRequest.recordset[0].process_id));
+            injectorsRequest.input(`injectorSerial${i}`, sql.VarChar(50), injectors[i].injectorSerial);
+            injectorsRequest.input(`duty100Before${i}`, sql.Int, parseInt(injectors[i].duty100Before));
+            injectorsRequest.input(`duty100After${i}`, sql.Int, parseInt(injectors[i].duty100After));
+            injectorsRequest.input(`duty50Before${i}`, sql.Int, parseInt(injectors[i].duty50Before));
+            injectorsRequest.input(`duty50After${i}`, sql.Int, parseInt(injectors[i].duty50After));
+            injectorsRequest.input(`idleBefore${i}`, sql.Decimal(10, 2), parseFloat(injectors[i].idleBefore));
+            injectorsRequest.input(`idleAfter${i}`, sql.Decimal(10, 2), parseFloat(injectors[i].idleAfter));
             values.push(`(@processId${i}, @injectorSerial${i}, @duty100Before${i}, @duty100After${i},
             @duty50Before${i}, @duty50After${i}, @idleBefore${i}, @idleAfter${i})`);
         }
 
         sqlString += values.join(', ');
-        const result = await request.query(sqlString);
-        return res.status(200).json({ message: 'Hey!' });
+        const result = await injectorsRequest.query(sqlString);
+        return res.status(200).json({ processId: processesRequest.recordset[0].process_id });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'error!' });
@@ -81,33 +85,190 @@ app.get('/api/export', async (req, res) => {
         await workbook.xlsx.readFile('./src/assets/template.xlsx');
         const sheet = workbook.getWorksheet('Sheet1');
 
-        results.recordset.forEach((injector, index) => {
+
+        const injectors = results.recordset;
+        injectors.forEach((injector, index) => {
             sheet.getCell(`A${index + 7}`).value = injector.injector_serial;
-            sheet.getCell(`B${index + 7}`).value = injector.duty_100_before;
-            sheet.getCell(`C${index + 7}`).value = injector.duty_100_after;
-            sheet.getCell(`D${index + 7}`).value = injector.duty_50_before;
-            sheet.getCell(`E${index + 7}`).value = injector.duty_50_after;
-            sheet.getCell(`F${index + 7}`).value = injector.idle_before;
-            sheet.getCell(`G${index + 7}`).value = injector.idle_after;
+            sheet.getCell(`B${index + 7}`).value = parseInt(injector.duty_100_before, 10);
+            sheet.getCell(`C${index + 7}`).value = parseInt(injector.duty_100_after, 10);
+            sheet.getCell(`D${index + 7}`).value = parseInt(injector.duty_50_before, 10);
+            sheet.getCell(`E${index + 7}`).value = parseInt(injector.duty_50_after, 10);
+            sheet.getCell(`F${index + 7}`).value = parseInt(injector.idle_before, 10);
+            sheet.getCell(`G${index + 7}`).value = parseInt(injector.idle_after, 10);
         });
 
         const process = results2.recordset[0];
         sheet.getCell('B2').value = process.make;
         sheet.getCell('B3').value = process.part;
         sheet.getCell('J3').value = process.ohm;
+        sheet.getCell('G1').value = process.process_id;
         sheet.getCell('J1').value = process.datetime;
 
+        const names = [
+            'duty_100',
+            'duty_50',
+            'idle'
+        ];
+
+        for (let i = 0; i < names.length; i++) {
+            const minBefore = Math.min(...injectors.map(injector => injector[`${names[i]}_before`]));
+            const maxBefore = Math.max(...injectors.map(injector => injector[`${names[i]}_before`]));
+            const minAfter = Math.min(...injectors.map(injector => injector[`${names[i]}_after`]));
+            const maxAfter = Math.max(...injectors.map(injector => injector[`${names[i]}_after`]));
+            sheet.getRow(21).getCell(2 + i * 2).value = minBefore;
+            sheet.getRow(22).getCell(2 + i * 2).value = maxBefore;
+            sheet.getRow(23).getCell(2 + i * 2).value = maxBefore - minBefore;
+            sheet.getRow(21).getCell(3 + i * 2).value = minAfter;
+            sheet.getRow(22).getCell(3 + i * 2).value = maxAfter;
+            sheet.getRow(23).getCell(3 + i * 2).value = maxAfter - minAfter;
+        }
+
         // Sets the header so that the Excel file is processed correctly.
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', 'attachment; filename="Services.xlsx"');
+        // res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        // res.setHeader('Content-Disposition', 'attachment; filename="Services.xlsx"');
 
-        // Sends the Excel file.
-        await workbook.xlsx.write(res);
+        await workbook.xlsx.writeFile('./src/assets/reportoutput.xlsx');
 
-        return res.status(200).end();
+        // Converts the report to a PDF so that it may be inserted into the main PDF.
+        await new Promise(resolve =>
+            exec(`"C:\\Program Files\\LibreOffice\\program\\soffice" --headless --invisible --convert-to pdf "${path.resolve('./src/assets/reportoutput.xlsx')}" --outdir "${path.resolve('./src/assets')}"`, (error, stdout, stderr) => {
+                if (error) {
+                    console.log(error);
+                }
+                console.log(stdout || stderr);
+                resolve();
+            })
+        );
+
+        const duty100 = {
+            label: 'Duty 100 Before',
+            data: injectors.map(injector => injector.duty_100_before),
+            label2: 'Duty 100 After',
+            data2: injectors.map(injector => injector.duty_100_after)
+        }
+        const duty50 = {
+            label: 'Duty 50 Before',
+            data: injectors.map(injector => injector.duty_50_before),
+            label2: 'Duty 50 After',
+            data2: injectors.map(injector => injector.duty_50_after)
+        }
+        const idle = {
+            label: 'Idle Before',
+            data: injectors.map(injector => injector.idle_before),
+            label2: 'Idle After',
+            data2: injectors.map(injector => injector.idle_after)
+        }
+
+        const duty100Buffer = await generateChartBuffer(duty100);
+        const duty50Buffer = await generateChartBuffer(duty50);
+        const idleBuffer = await generateChartBuffer(idle);
+
+        const buffers = [
+            duty100Buffer,
+            duty50Buffer,
+            idleBuffer
+        ];
+
+        const reportOutputPdfPath = './src/assets/reportoutput.pdf';
+
+        // Trims the first page, since the PDF has an extra blank page tacked onto its end.
+        await trimFirstPage(reportOutputPdfPath);
+
+        // Adds the three charts to the PDF.
+        await addChartsToPdf(reportOutputPdfPath, 'finalreport.pdf', buffers);
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=reportoutput.pdf');
+        return res.status(200).sendFile(path.resolve('./finalreport.pdf'));
     } catch (err) {
         console.log(err);
         return res.status(500).json(err);
     }
-
 });
+
+const chartJSTool = new ChartJSNodeCanvas({ width: 390, height: 187.5, backgroundColour: 'white' });
+
+async function generateChartBuffer(data) {
+    const configuration = {
+        type: 'bar',
+        data: {
+            labels: [...data.data.map((_, i) => i + 1)],
+            datasets: [
+                {
+                    label: data.label,
+                    data: data.data,
+                    backgroundColor: 'rgba(255, 40, 40, 1)'
+                },
+                {
+                    label: data.label2,
+                    data: data.data2,
+                    backgroundColor: 'rgba(40, 40, 255, 1)'
+                }
+            ]
+        }
+    };
+
+    const image = await chartJSTool.renderToBuffer(configuration);
+    return image;
+}
+
+async function addChartsToPdf(templatePath, outputPath, chartBuffers) {
+    // Load existing PDF
+    const existingPdfBytes = fs.readFileSync(templatePath);
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+    // Add charts as an image on the first page
+    const pngImages = [];
+    for (let i = 0; i < chartBuffers.length; i++) {
+        pngImages.push(await pdfDoc.embedPng(chartBuffers[i]));
+    }
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+
+    const padding = 10;
+    const chartWidth = 260;
+    const chartHeight = 125;
+    const bottomMargin = 64;
+
+    // Place image at exact coordinates
+    firstPage.drawImage(pngImages[0], {
+        x: 495,
+        y: chartHeight * 2 + padding * 2 + bottomMargin,
+        width: chartWidth,
+        height: chartHeight,
+    });
+    firstPage.drawImage(pngImages[1], {
+        x: 495,
+        y: chartHeight + padding + bottomMargin,
+        width: chartWidth,
+        height: chartHeight,
+    });
+    firstPage.drawImage(pngImages[2], {
+        x: 495,
+        y: bottomMargin,
+        width: chartWidth,
+        height: chartHeight,
+    });
+
+    // Save the modified PDF
+    const pdfBytes = await pdfDoc.save();
+    fs.writeFileSync(outputPath, pdfBytes);
+}
+
+async function trimFirstPage(reportPath) {
+    const existingPdfBytes = fs.readFileSync(reportPath);
+
+    // Load into pdf-lib
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+    // Create a new PDF
+    const newPdf = await PDFDocument.create();
+
+    // Copy only the first page
+    const [firstPage] = await newPdf.copyPages(pdfDoc, [0]);
+    newPdf.addPage(firstPage);
+
+    // Save to file
+    const pdfBytes = await newPdf.save();
+    fs.writeFileSync(reportPath, pdfBytes);
+}
