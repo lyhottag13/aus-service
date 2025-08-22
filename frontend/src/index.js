@@ -7,6 +7,8 @@ async function main() {
     elements.buttons.submit.addEventListener('click', handleSubmit);
     elements.buttons.add.addEventListener('click', handleAdd);
     elements.buttons.export.addEventListener('click', handleExport);
+    addInputValidations();
+    updateExportCombo();
     resetAll();
 }
 
@@ -19,15 +21,15 @@ async function handleSubmit() {
         if (injectors.length === 0) {
             return window.alert('Enter at least one injector.');
         }
-        if (elements.inputs.customer.value === '' || elements.inputs.part.value === '' || elements.inputs.ohm.value === '' || elements.inputs.make.value === '') {
+        if (elements.inputs.order.customer.value === '' || elements.inputs.order.part.value === '' || elements.inputs.order.ohm.value === '' || elements.inputs.order.make.value === '') {
             return window.alert('Fill out all the service fields');
         }
         const response = await axios.post('/api/service', {
             injectors,
-            make: elements.inputs.make.value,
-            part: elements.inputs.part.value,
-            customer: elements.inputs.customer.value,
-            ohm: elements.inputs.ohm.value
+            make: elements.inputs.order.make.value,
+            part: elements.inputs.order.part.value,
+            customer: elements.inputs.order.customer.value,
+            ohm: elements.inputs.order.ohm.value
         });
         window.alert(`New Process ID: ${response.data.processId}`);
         resetAll();
@@ -42,28 +44,30 @@ async function handleSubmit() {
  */
 async function handleAdd() {
     const newInjector = {
-        injectorSerial: elements.inputs.injectorSerial.value,
-        duty100Before: elements.inputs.duty100Before.value,
-        duty100After: elements.inputs.duty100After.value,
-        duty50Before: elements.inputs.duty50Before.value,
-        duty50After: elements.inputs.duty50After.value,
-        idleBefore: elements.inputs.idleBefore.value,
-        idleAfter: elements.inputs.idleAfter.value,
+        injectorSerial: elements.inputs.injector.injectorSerial.value,
+        duty100Before: elements.inputs.injector.duty100Before.value,
+        duty100After: elements.inputs.injector.duty100After.value,
+        duty50Before: elements.inputs.injector.duty50Before.value,
+        duty50After: elements.inputs.injector.duty50After.value,
+        idleBefore: elements.inputs.injector.idleBefore.value,
+        idleAfter: elements.inputs.injector.idleAfter.value,
     };
     injectors.push(newInjector);
     resetInjectorInputs();
     updateInjectorTable();
 }
 
+/**
+ * Handles the export button. Takes the value of the process that the user
+ * chooses in the selection field and opens a PDF using that process ID.
+ */
 async function handleExport() {
     try {
-        const processId = window.prompt('Process ID?');
-        if (!processId || isNaN(processId)) {
-            return;
-        }
+        const processId = elements.inputs.order.process.value;
         window.open(`/api/export?processId=${processId}`);
     } catch (err) {
-
+        console.log(err.stack);
+        window.alert(err.message);
     }
 }
 
@@ -71,16 +75,7 @@ async function handleExport() {
  * Resets all the injector inputs.
  */
 function resetInjectorInputs() {
-    elements.inputs.injectorSerial.value = '';
-    elements.inputs.duty100Before.value = '';
-    elements.inputs.duty100After.value = '';
-    elements.inputs.duty50Before.value = '';
-    elements.inputs.duty50After.value = '';
-    elements.inputs.idleBefore.value = '';
-    elements.inputs.idleAfter.value = '';
-
-
-
+    Object.values(elements.inputs.injector).forEach(input => input.value = '');
 }
 
 function updateInjectorTable() {
@@ -114,20 +109,49 @@ function resetAll() {
     resetInjectorInputs();
     resetOrderInputs();
     updateInjectorTable();
+    updateExportCombo();
 }
 
 /**
  * Resets the order inputs.
  */
 function resetOrderInputs() {
-    elements.inputs.customer.value = '';
-    elements.inputs.make.value = '';
-    elements.inputs.part.value = '';
-    elements.inputs.ohm.value = '';
+    Object.values(elements.inputs.order).forEach(input => input.value = '');
 }
 
 function resetInjectors() {
     injectors.splice(0, injectors.length);
+}
+
+async function updateExportCombo() {
+    try {
+        const { data } = await axios.get('/api/processes');
+        const { processes } = data;
+
+        // Creates an array of options from each process in the list.
+        const options = processes.map(process => {
+            const newOption = document.createElement('option');
+            newOption.textContent = `${process.process_id}: ${process.make}, ${process.part}, ${process.customer}, ${new Date(process.datetime).toLocaleString()}`;
+            newOption.value = process.process_id;
+            return newOption;
+        });
+
+        // Clears the previous options, if there are any.
+        elements.inputs.order.process.innerHTML = '';
+
+        // Adds the options to the process selector.
+        elements.inputs.order.process.append(...options);
+    } catch (err) {
+        console.log(err.stack);
+        window.alert(err.message);
+    }
+}
+
+function addInputValidations() {
+    const filterLetters = function () { this.value = this.value.replace(/[^0-9]/g, '') };
+    const { inputs } = elements;
+    Object.values(inputs.injector).forEach(input => input.addEventListener('input', filterLetters));
+    elements.inputs.order.ohm.addEventListener('input', filterLetters);
 }
 
 main();

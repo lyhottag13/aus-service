@@ -19,7 +19,7 @@ const __dirname = path.dirname(__filename);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-app.listen(port, '127.0.0.1', () => {
+app.listen(port, () => {
     console.log(`App running on port ${port}`);
 });
 
@@ -35,7 +35,7 @@ app.post('/api/service', async (req, res) => {
             .input('part', sql.VarChar(50), part)
             .input('customer', sql.VarChar(50), customer)
             .input('ohm', sql.Decimal(8, 2), ohm)
-            .input('datetime', sql.DateTime, new Date(new Date().toLocaleDateString()))
+            .input('datetime', sql.DateTime, new Date())
             .query(`INSERT INTO processes
                 (make, part, customer, ohm, datetime)
                 OUTPUT inserted.*
@@ -186,7 +186,24 @@ app.get('/api/export', async (req, res) => {
     }
 });
 
-const chartJSTool = new ChartJSNodeCanvas({ width: 390, height: 187.5, backgroundColour: 'white' });
+app.get('/api/processes', async (_req, res) => {
+    try {
+        await poolConnect;
+        const request = pool.request();
+        const results = await request.query('SELECT * FROM processes ORDER BY process_id DESC');
+        const processes = results.recordset;
+        return res.status(200).json({ processes });
+    } catch (err) {
+        console.log(err.stack);
+        return res.status(500).json({ err, message: 'Something went wrong with the processes call.' });
+    }
+})
+
+const chartWidth = 210;
+const chartHeight = 126;
+const ratio = 10 / 7;
+
+const chartJSTool = new ChartJSNodeCanvas({ width: chartWidth * ratio, height: chartHeight * ratio, backgroundColour: 'white' });
 
 async function generateChartBuffer(data) {
     const configuration = {
@@ -226,25 +243,24 @@ async function addChartsToPdf(templatePath, outputPath, chartBuffers) {
     const firstPage = pages[0];
 
     const padding = 10;
-    const chartWidth = 260;
-    const chartHeight = 125;
+    const chartX = 512;
     const bottomMargin = 64;
 
     // Places image at exact coordinates.
     firstPage.drawImage(pngImages[0], {
-        x: 495,
+        x: chartX,
         y: chartHeight * 2 + padding * 2 + bottomMargin,
         width: chartWidth,
         height: chartHeight,
     });
     firstPage.drawImage(pngImages[1], {
-        x: 495,
+        x: chartX,
         y: chartHeight + padding + bottomMargin,
         width: chartWidth,
         height: chartHeight,
     });
     firstPage.drawImage(pngImages[2], {
-        x: 495,
+        x: chartX,
         y: bottomMargin,
         width: chartWidth,
         height: chartHeight,

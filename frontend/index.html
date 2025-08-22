@@ -6,6 +6,19 @@
 
 <body>
     <div id="app-wrapper">
+        <div id="order-wrapper">
+            <div id="order-input-wrapper">
+                <input id="make" placeholder="Vehicle make (e.g. Toyota)">
+                <input id="part" placeholder="Part #">
+                <input id="customer" placeholder="Customer name">
+                <input id="ohm" placeholder="Ohm">
+            </div>
+            <button id="submit">Submit Order</button>
+        </div>
+        <div id="export-wrapper">
+            <select id="process-select"></select>
+            <button id="export">Export Excel</button>
+        </div>
         <div id="injector-wrapper">
             <input id="injector-serial" placeholder="Injector serial number">
             <input id="duty-100-before" placeholder="Duty cycle 100% (before)">
@@ -33,19 +46,6 @@
                 </tbody>
             </table>
         </div>
-        <div id="order-wrapper">
-            <div id="order-input-wrapper">
-                <input id="make" placeholder="Vehicle make (e.g. Toyota)">
-                <input id="part" placeholder="Part #">
-                <input id="customer" placeholder="Customer name">
-                <input id="ohm" placeholder="Ohm">
-            </div>
-            <button id="submit">Submit Order</button>
-        </div>
-        <div id="button-wrapper">
-            <button id="export">Export Excel</button>
-        </div>
-
     </div>
     <script type="module" src="src/index.js"></script>
 </body>
