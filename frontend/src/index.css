@@ -30,7 +30,6 @@ button:hover {
     width: 100vw;
     justify-content: center;
     align-items: start;
-
 }
 
 table {
@@ -103,7 +102,7 @@ input {
     width: 100vw;
     padding: 20px;
     input {
-        font-size: clamp(10px, 1vw, 50px);
+        font-size: clamp(10px, 0.9vw, 50px);
     }
 }
 
