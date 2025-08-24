@@ -56,13 +56,14 @@ async function handleAdd() {
     // Checks to see if the injector has any empty string fields.
     const isFilledOut = Object.values(newInjector).every(value => value !== '');
 
-    const exists = injectors.some(injector => injector.injectorSerial === newInjector.injectorSerial);
+    // Checks if there's already an injector with this serial in the order.
+    const injectorSerialExists = injectors.some(injector => injector.injectorSerial === newInjector.injectorSerial);
 
     if (!isFilledOut) {
         return window.alert('Please fill every injector field.');
     }
 
-    if (exists) {
+    if (injectorSerialExists) {
         return window.alert('An injector already exists with this serial in this order.');
     }
     injectors.push(newInjector);
@@ -162,9 +163,18 @@ async function updateExportCombo() {
 }
 
 function addInputValidations() {
-    const filterLetters = function () { this.value = this.value.replace(/[^0-9]/g, '') };
-    const { inputs } = elements;
-    Object.values(inputs.injector).forEach(input => input.addEventListener('input', filterLetters));
+    const filterLetters = function () {
+        if (this === elements.inputs.injector.idleAfter || this === elements.inputs.injector.idleBefore || this === elements.inputs.order.ohm) {
+            this.value = this.value.replace(/[^0-9.]/g, '');
+            if (this.value.includes('.')) {
+                const realValue = this.value.split('.');
+                this.value = realValue[0] + '.' + realValue[1];
+            }
+        } else {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        }
+    };
+    Object.values(elements.inputs.injector).forEach(input => input.addEventListener('input', filterLetters));
     elements.inputs.order.ohm.addEventListener('input', filterLetters);
 }
 

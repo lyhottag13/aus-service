@@ -89,12 +89,12 @@ app.get('/api/export', async (req, res) => {
         const injectors = results.recordset;
         injectors.forEach((injector, index) => {
             sheet.getCell(`A${index + 7}`).value = injector.injector_serial;
-            sheet.getCell(`B${index + 7}`).value = parseInt(injector.duty_100_before, 10);
-            sheet.getCell(`C${index + 7}`).value = parseInt(injector.duty_100_after, 10);
-            sheet.getCell(`D${index + 7}`).value = parseInt(injector.duty_50_before, 10);
-            sheet.getCell(`E${index + 7}`).value = parseInt(injector.duty_50_after, 10);
-            sheet.getCell(`F${index + 7}`).value = parseInt(injector.idle_before, 10);
-            sheet.getCell(`G${index + 7}`).value = parseInt(injector.idle_after, 10);
+            sheet.getCell(`B${index + 7}`).value = Number(injector.duty_100_before, 10);
+            sheet.getCell(`C${index + 7}`).value = Number(injector.duty_100_after, 10);
+            sheet.getCell(`D${index + 7}`).value = Number(injector.duty_50_before, 10);
+            sheet.getCell(`E${index + 7}`).value = Number(injector.duty_50_after, 10);
+            sheet.getCell(`F${index + 7}`).value = Number(injector.idle_before, 10);
+            sheet.getCell(`G${index + 7}`).value = Number(injector.idle_after, 10);
         });
 
         const process = results2.recordset[0];

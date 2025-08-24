@@ -8,10 +8,10 @@
     <div id="app-wrapper">
         <div id="order-wrapper">
             <div id="order-input-wrapper">
-                <input id="make" placeholder="Make">
-                <input id="part" placeholder="Part Number">
-                <input id="customer" placeholder="Customer (Required)">
-                <input id="ohm" placeholder="Ohm">
+                <input id="make" placeholder="Make" maxlength="20">
+                <input id="part" placeholder="Part Number" maxlength="20">
+                <input id="customer" placeholder="Customer (Required)" maxlength="50">
+                <input id="ohm" placeholder="Ohm" maxlength="10">
             </div>
             <button id="submit">Submit Order</button>
         </div>
@@ -20,13 +20,13 @@
             <button id="export">Export Excel</button>
         </div>
         <div id="injector-wrapper">
-            <input id="injector-serial" placeholder="Injector serial number">
-            <input id="duty-100-before" placeholder="Duty cycle 100% (before)">
-            <input id="duty-100-after" placeholder="Duty cycle 100% (after)">
-            <input id="duty-50-before" placeholder="Duty cycle 50% (before)">
-            <input id="duty-50-after" placeholder="Duty cycle 50% (after)">
-            <input id="idle-before" placeholder="Idle test value (before)">
-            <input id="idle-after" placeholder="Idle test value (after)">
+            <input id="injector-serial" placeholder="Injector serial number" maxlength="8">
+            <input id="duty-100-before" placeholder="Duty cycle 100% (before)" maxlength="8">
+            <input id="duty-100-after" placeholder="Duty cycle 100% (after)" maxlength="8">
+            <input id="duty-50-before" placeholder="Duty cycle 50% (before)" maxlength="8">
+            <input id="duty-50-after" placeholder="Duty cycle 50% (after)" maxlength="8">
+            <input id="idle-before" placeholder="Idle test value (before)" maxlength="8">
+            <input id="idle-after" placeholder="Idle test value (after)" maxlength="8">
             <button id="add">+</button>
         </div>
         <div id="injector-table-wrapper">
