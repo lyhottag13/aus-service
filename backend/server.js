@@ -34,7 +34,7 @@ app.post('/api/service', async (req, res) => {
             .input('make', sql.VarChar(50), make)
             .input('part', sql.VarChar(50), part)
             .input('customer', sql.VarChar(50), customer)
-            .input('ohm', sql.Decimal(8, 2), ohm)
+            .input('ohm', sql.Decimal(8, 2), ohm  === '' ? null : ohm)
             .input('datetime', sql.DateTime, new Date())
             .query(`INSERT INTO processes
                 (make, part, customer, ohm, datetime)
@@ -98,9 +98,9 @@ app.get('/api/export', async (req, res) => {
         });
 
         const process = results2.recordset[0];
-        sheet.getCell('B2').value = process.make;
-        sheet.getCell('B3').value = process.part;
-        sheet.getCell('J3').value = process.ohm;
+        sheet.getCell('B2').value = process.make || 'N/A';
+        sheet.getCell('B3').value = process.part || 'N/A';
+        sheet.getCell('J3').value = process.ohm || 'N/A';
         sheet.getCell('G1').value = process.process_id;
         sheet.getCell('J1').value = process.datetime;
 

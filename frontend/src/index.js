@@ -21,8 +21,8 @@ async function handleSubmit() {
         if (injectors.length === 0) {
             return window.alert('Enter at least one injector.');
         }
-        if (elements.inputs.order.customer.value === '' || elements.inputs.order.part.value === '' || elements.inputs.order.ohm.value === '' || elements.inputs.order.make.value === '') {
-            return window.alert('Fill out all the service fields');
+        if (elements.inputs.order.customer.value === '') {
+            return window.alert('Customer field required.');
         }
         const response = await axios.post('/api/service', {
             injectors,
@@ -52,6 +52,19 @@ async function handleAdd() {
         idleBefore: elements.inputs.injector.idleBefore.value,
         idleAfter: elements.inputs.injector.idleAfter.value,
     };
+
+    // Checks to see if the injector has any empty string fields.
+    const isFilledOut = Object.values(newInjector).every(value => value !== '');
+
+    const exists = injectors.some(injector => injector.injectorSerial === newInjector.injectorSerial);
+
+    if (!isFilledOut) {
+        return window.alert('Please fill every injector field.');
+    }
+
+    if (exists) {
+        return window.alert('An injector already exists with this serial in this order.');
+    }
     injectors.push(newInjector);
     resetInjectorInputs();
     updateInjectorTable();
@@ -129,9 +142,10 @@ async function updateExportCombo() {
         const { processes } = data;
 
         // Creates an array of options from each process in the list.
-        const options = processes.map(process => {
+        const sortedProcesses = processes.sort((a, b) => a.datetime - b.datetime);
+        const options = sortedProcesses.map(process => {
             const newOption = document.createElement('option');
-            newOption.textContent = `${process.process_id}: ${process.make}, ${process.part}, ${process.customer}, ${new Date(process.datetime).toLocaleString()}`;
+            newOption.textContent = `${new Date(process.datetime).toLocaleString().split(',')[0]}, ${process.customer}`;
             newOption.value = process.process_id;
             return newOption;
         });

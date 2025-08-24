@@ -11,6 +11,11 @@ body {
     background-color: rgb(252, 227, 147);
 }
 
+button:hover {
+    filter: brightness(0.8);
+    transition: all 0.1s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
 #app-wrapper {
     padding-top: 40px;
     width: 100vw;
@@ -76,8 +81,12 @@ input {
     align-items: center;
     justify-items: center;
     input {
-        font-size: clamp(10px, 1.9vw, 50px);
+        font-size: clamp(10px, 1.8vw, 50px);
     }
+}
+
+#customer {
+    font-weight: bold;
 }
 
 #submit {
